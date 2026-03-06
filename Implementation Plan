@@ -1,0 +1,115 @@
+# Sistema de Automatización — Reportes de Instaladores en Terreno
+
+## Problema
+
+Los instaladores completan checklists y envían fotos manualmente. El procesamiento posterior (crear carpetas en Drive, subir fotos, tipear datos en Sheets) es manual y propenso a errores.
+
+## Propuesta de Arquitectura
+
+```mermaid
+graph LR
+    A["📱 PWA React+Vite<br/>Formulario Mobile"] -->|POST datos + fotos base64| B["⚙️ Google Apps Script<br/>Web App (doPost)"]
+    B --> C["📁 Google Drive<br/>Carpetas por EDS"]
+    B --> D["📊 Google Sheets<br/>Spreadsheet Maestro"]
+```
+
+### ¿Por qué esta combinación?
+
+| Componente | Tecnología | Justificación |
+|---|---|---|
+| **Frontend** | React + Vite (PWA) | Mobile-first, instalable en el celular, rápida, familiar para el equipo |
+| **Backend/API** | Google Apps Script Web App | **Cero costo**, integración nativa con Drive y Sheets, sin servidor, sin auth extra |
+| **Storage** | Google Drive | Ya lo usan, carpetas por EDS automáticas |
+| **Base de datos** | Google Sheets | Ya lo usan, es la fuente de verdad |
+
+> [!IMPORTANT]
+> **¿Por qué NO n8n o Make?** Agregan una capa intermedia innecesaria. Google Apps Script hace todo nativamente (Drive + Sheets) en un solo lugar, sin costos, sin servidores, sin webhooks intermedios.
+
+### Flujo de datos
+
+1. Instalador abre PWA en su celular → llena formulario → adjunta fotos → envía
+2. Frontend comprime las fotos, las convierte a base64, y las envía en un POST a Google Apps Script
+3. Apps Script recibe el payload:
+   - Busca/crea carpeta EDS en Drive
+   - Sube las fotos a esa carpeta
+   - Hace la carpeta pública (lectura con enlace)
+   - Inserta fila en Google Sheets con todos los datos + link a la carpeta
+4. Apps Script devuelve respuesta → Frontend muestra confirmación
+
+---
+
+## Proposed Changes
+
+### Frontend — React + Vite PWA
+
+#### [NEW] [package.json](file:///z:/MatiasR/Desktop/ProyectoAutomatizacion/package.json)
+Proyecto Vite con React, dependencias mínimas.
+
+#### [NEW] [src/App.jsx](file:///z:/MatiasR/Desktop/ProyectoAutomatizacion/src/App.jsx)
+Componente principal con el formulario de reporte.
+
+#### [NEW] [src/App.css](file:///z:/MatiasR/Desktop/ProyectoAutomatizacion/src/App.css)
+Estilos mobile-first con diseño premium (gradientes, glassmorphism, micro-animaciones).
+
+#### [NEW] [src/components/FormField.jsx](file:///z:/MatiasR/Desktop/ProyectoAutomatizacion/src/components/FormField.jsx)
+Componente reutilizable para campos del formulario (select, text, file).
+
+#### [NEW] [src/components/PhotoUploader.jsx](file:///z:/MatiasR/Desktop/ProyectoAutomatizacion/src/components/PhotoUploader.jsx)
+Componente de carga de fotos con preview, compresión canvas y conversión a base64.
+
+#### [NEW] [src/config/formOptions.js](file:///z:/MatiasR/Desktop/ProyectoAutomatizacion/src/config/formOptions.js)
+Opciones de dropdowns centralizadas (regiones, comunas, estados, etc.).
+
+#### [NEW] [src/services/api.js](file:///z:/MatiasR/Desktop/ProyectoAutomatizacion/src/services/api.js)
+Servicio para enviar datos al endpoint de Google Apps Script.
+
+#### [NEW] [index.html](file:///z:/MatiasR/Desktop/ProyectoAutomatizacion/index.html)
+HTML base con meta tags para PWA y móvil.
+
+#### [NEW] [vite.config.js](file:///z:/MatiasR/Desktop/ProyectoAutomatizacion/vite.config.js)
+Configuración Vite con plugin PWA.
+
+---
+
+### Backend — Google Apps Script
+
+#### [NEW] [google-apps-script/Code.gs](file:///z:/MatiasR/Desktop/ProyectoAutomatizacion/google-apps-script/Code.gs)
+Script completo con:
+- `doPost(e)` — Endpoint que recibe el JSON
+- `getOrCreateFolder(parentFolder, edsCode)` — Busca/crea carpeta EDS
+- `uploadPhotos(folder, photos)` — Sube fotos
+- `setFolderPublic(folder)` — Permisos de lectura pública
+- `appendToSheet(data, folderUrl)` — Inserta fila en Sheets
+
+#### [NEW] [google-apps-script/README.md](file:///z:/MatiasR/Desktop/ProyectoAutomatizacion/google-apps-script/README.md)
+Guía paso a paso para deployar el Apps Script como Web App.
+
+---
+
+## Configuración Requerida del Usuario
+
+> [!CAUTION]
+> Antes de que el sistema funcione, necesitarás:
+> 1. Crear un Google Spreadsheet y copiar su ID
+> 2. Crear una carpeta raíz en Google Drive y copiar su ID
+> 3. Crear un proyecto de Google Apps Script, pegar el código, y deployar como Web App
+> 4. Pegar la URL del Web App en el archivo `src/services/api.js` del frontend
+
+---
+
+## Verification Plan
+
+### Prueba en navegador (browser tool)
+1. Ejecutar `npm run dev` en el directorio del proyecto
+2. Abrir la app en el navegador
+3. Verificar que el formulario renderiza correctamente con todos los campos
+4. Verificar que los dropdowns tienen las opciones correctas
+5. Verificar que la carga de fotos funciona (preview + compresión)
+6. Verificar diseño responsive simulando viewport móvil
+
+### Verificación manual (requiere configuración Google)
+1. El usuario debe configurar Google Apps Script con el código provisto
+2. Conectar el Spreadsheet y la carpeta de Drive
+3. Enviar un reporte de prueba desde el formulario
+4. Verificar que se creó la carpeta EDS en Drive con las fotos
+5. Verificar que se insertó la fila en Google Sheets
