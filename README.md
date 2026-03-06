@@ -176,7 +176,9 @@ Para que la app funcione end-to-end, es necesario configurar el backend:
 
 ## 👨‍💻 Autor
 
-Matias Ramos E., Kubi Lockers 
+Matias Ramos E. 
+ Kubi Lockers 
+
 ---
 
 ## 📄 Licencia
