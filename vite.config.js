@@ -11,7 +11,7 @@ export default defineConfig({
         target: 'https://script.google.com',
         changeOrigin: true,
         followRedirects: true,
-        rewrite: (path) => path.replace(/^\/api/, '/macros/s/AKfycbyYx39ptxI11Ze94c0NsWrFjMYrCUVuifoJW8bVNX9QbKxcZXzFvqru3Waaw88JILHDZg/exec'),
+        rewrite: (path) => path.replace(/^\/api/, '/macros/s/AKfycbwgEnxPN5ugdFcT6WqO00CY7ByYZWwLYMvQL9YLzZuNadq-vqcE2xh96OPVta1nEpXnyw/exec'),
       }
     }
   }

@@ -1,9 +1,35 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { FORM_FIELDS } from './config/formOptions';
 import FormField from './components/FormField';
 import PhotoUploader from './components/PhotoUploader';
-import { submitReport } from './services/api';
+import { submitReport, lookupEds, mapEdsDataToForm } from './services/api';
 import './App.css';
+
+// Indicador visual del estado de búsqueda de EDS
+function EdsStatusBadge({ status }) {
+    if (status === 'loading') {
+        return <div className="eds-badge eds-badge--loading" aria-label="Buscando..."><div className="spinner tiny"></div></div>;
+    }
+    if (status === 'found') {
+        return (
+            <div className="eds-badge eds-badge--found" aria-label="EDS encontrada">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+            </div>
+        );
+    }
+    if (status === 'notfound') {
+        return (
+            <div className="eds-badge eds-badge--notfound" aria-label="EDS no encontrada">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                </svg>
+            </div>
+        );
+    }
+    return null;
+}
 
 // Estado inicial del formulario
 function getInitialFormData() {
@@ -25,8 +51,56 @@ function App() {
     const [statusMessage, setStatusMessage] = useState('');
     const [folderUrl, setFolderUrl] = useState('');
 
+    // Estado para el autocompletado de EDS
+    const [edsLookupStatus, setEdsLookupStatus] = useState('idle'); // idle | loading | found | notfound
+    const [autoFilledFields, setAutoFilledFields] = useState(new Set());
+
+    // Debounce: buscar EDS cuando el usuario deja de escribir (700ms)
+    useEffect(() => {
+        const edsValue = formData.eds?.trim();
+        if (!edsValue || edsValue.length < 2) {
+            setEdsLookupStatus('idle');
+            return;
+        }
+        setEdsLookupStatus('loading');
+        const timer = setTimeout(async () => {
+            const result = await lookupEds(edsValue);
+            if (result.status === 'found') {
+                const mapped = mapEdsDataToForm(result.data);
+                if (Object.keys(mapped).length > 0) {
+                    setFormData(prev => ({ ...prev, ...mapped }));
+                    setAutoFilledFields(new Set(Object.keys(mapped)));
+                    setEdsLookupStatus('found');
+                } else {
+                    // Encontrado pero sin campos mapeables
+                    setEdsLookupStatus('notfound');
+                }
+            } else if (result.status === 'notfound') {
+                setEdsLookupStatus('notfound');
+                setAutoFilledFields(new Set());
+            } else {
+                // Error de red — no molestar al usuario
+                setEdsLookupStatus('idle');
+            }
+        }, 700);
+        return () => clearTimeout(timer);
+    }, [formData.eds]);
+
     const handleFieldChange = useCallback((name, value) => {
         setFormData(prev => ({ ...prev, [name]: value }));
+        // Si el usuario edita manualmente un campo auto-rellenado, quitar la marca
+        if (name !== 'eds') {
+            setAutoFilledFields(prev => {
+                if (!prev.has(name)) return prev;
+                const next = new Set(prev);
+                next.delete(name);
+                return next;
+            });
+        }
+        // Si cambia el EDS, limpiar autocompletado anterior
+        if (name === 'eds') {
+            setAutoFilledFields(new Set());
+        }
     }, []);
 
     const handlePhotosChange = useCallback((newPhotos) => {
@@ -116,6 +190,23 @@ function App() {
                             <span className="section-icon">📋</span>
                             <h2>Información General</h2>
                         </div>
+                        {edsLookupStatus === 'found' && (
+                            <div className="eds-autofill-notice">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                                Datos cargados automáticamente. Puedes editarlos si es necesario.
+                            </div>
+                        )}
+                        {edsLookupStatus === 'notfound' && formData.eds?.trim().length >= 2 && (
+                            <div className="eds-autofill-notice eds-autofill-notice--warn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                                    <path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                </svg>
+                                EDS no encontrada en el listado. Completa los campos manualmente.
+                            </div>
+                        )}
                         <div className="fields-grid">
                             {FORM_FIELDS.slice(0, 7).map(field => (
                                 <FormField
@@ -123,6 +214,8 @@ function App() {
                                     field={field}
                                     value={formData[field.name]}
                                     onChange={handleFieldChange}
+                                    autoFilled={autoFilledFields.has(field.name)}
+                                    badge={field.name === 'eds' ? <EdsStatusBadge status={edsLookupStatus} /> : null}
                                 />
                             ))}
                         </div>
@@ -141,6 +234,7 @@ function App() {
                                     field={field}
                                     value={formData[field.name]}
                                     onChange={handleFieldChange}
+                                    autoFilled={autoFilledFields.has(field.name)}
                                 />
                             ))}
                         </div>

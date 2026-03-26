@@ -52,7 +52,7 @@ export const FORM_FIELDS = [
     { name: 'comuna', label: 'Comuna', type: 'text', required: true, placeholder: 'Ingrese la comuna' },
     { name: 'direccion', label: 'Dirección', type: 'text', required: true, placeholder: 'Dirección de la instalación' },
     { name: 'region', label: 'Región', type: 'select', required: true, options: REGIONES },
-    { name: 'movil', label: 'Móvil', type: 'text', required: false, placeholder: 'Número de contacto' },
+    { name: 'movil', label: 'Móvil', type: 'text', required: false, placeholder: 'Nombre de Instalador' },
     { name: 'codigoBlue', label: 'Código Blue', type: 'text', required: false, placeholder: 'Código Blue' },
     { name: 'instalado', label: 'Instalado', type: 'select', required: true, options: INSTALADO_OPTIONS },
     { name: 'modulosInstalados', label: 'Módulos Instalados', type: 'select', required: true, options: MODULOS_OPTIONS },

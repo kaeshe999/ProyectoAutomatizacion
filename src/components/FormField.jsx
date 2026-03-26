@@ -1,21 +1,26 @@
 import { useState } from 'react';
 
-export default function FormField({ field, value, onChange }) {
+export default function FormField({ field, value, onChange, badge, autoFilled }) {
     const [isFocused, setIsFocused] = useState(false);
 
     const handleChange = (e) => {
         onChange(field.name, e.target.value);
     };
 
-    const baseClass = `form-field ${isFocused ? 'focused' : ''} ${value ? 'has-value' : ''}`;
+    const baseClass = `form-field ${isFocused ? 'focused' : ''} ${value ? 'has-value' : ''} ${autoFilled ? 'auto-filled' : ''}`;
+
+    const labelEl = (
+        <label htmlFor={field.name}>
+            {field.label}
+            {field.required && <span className="required">*</span>}
+            {autoFilled && <span className="auto-fill-badge">auto</span>}
+        </label>
+    );
 
     if (field.type === 'select') {
         return (
             <div className={baseClass}>
-                <label htmlFor={field.name}>
-                    {field.label}
-                    {field.required && <span className="required">*</span>}
-                </label>
+                {labelEl}
                 <div className="select-wrapper">
                     <select
                         id={field.name}
@@ -44,10 +49,7 @@ export default function FormField({ field, value, onChange }) {
     if (field.type === 'textarea') {
         return (
             <div className={baseClass}>
-                <label htmlFor={field.name}>
-                    {field.label}
-                    {field.required && <span className="required">*</span>}
-                </label>
+                {labelEl}
                 <textarea
                     id={field.name}
                     name={field.name}
@@ -65,21 +67,21 @@ export default function FormField({ field, value, onChange }) {
 
     return (
         <div className={baseClass}>
-            <label htmlFor={field.name}>
-                {field.label}
-                {field.required && <span className="required">*</span>}
-            </label>
-            <input
-                id={field.name}
-                type={field.type}
-                name={field.name}
-                value={value}
-                onChange={handleChange}
-                placeholder={field.placeholder}
-                required={field.required}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-            />
+            {labelEl}
+            <div className={`input-wrapper${badge ? ' input-wrapper--with-badge' : ''}`}>
+                <input
+                    id={field.name}
+                    type={field.type}
+                    name={field.name}
+                    value={value}
+                    onChange={handleChange}
+                    placeholder={field.placeholder}
+                    required={field.required}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                />
+                {badge && <div className="input-badge">{badge}</div>}
+            </div>
         </div>
     );
 }

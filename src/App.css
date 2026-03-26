@@ -832,3 +832,110 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     padding: 1.5rem;
   }
 }
+
+/* ========================================
+   EDS AUTOCOMPLETADO
+   ======================================== */
+
+/* Wrapper para inputs con badge (EDS) */
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper input {
+  width: 100%;
+}
+
+.input-wrapper--with-badge input {
+  padding-right: 2.75rem;
+}
+
+/* Badge de estado dentro del input EDS */
+.input-badge {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.eds-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eds-badge--loading {
+  background: transparent;
+}
+
+.eds-badge--found {
+  background: rgba(117, 216, 163, 0.15);
+  color: var(--kubi-green);
+}
+
+.eds-badge--notfound {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+}
+
+/* Spinner tiny para EDS badge */
+.spinner.tiny {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+/* Tag "auto" en el label de campos rellenados automáticamente */
+.auto-fill-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(117, 216, 163, 0.12);
+  color: var(--kubi-green);
+  border: 1px solid rgba(117, 216, 163, 0.25);
+  border-radius: 4px;
+  vertical-align: middle;
+  line-height: 1.4;
+}
+
+/* Campo auto-rellenado: sutil tinte verde en el borde izquierdo */
+.form-field.auto-filled input,
+.form-field.auto-filled select,
+.form-field.auto-filled textarea {
+  border-left: 2px solid rgba(117, 216, 163, 0.5);
+  background: rgba(117, 216, 163, 0.04);
+}
+
+/* Aviso de autocompletado exitoso / no encontrado */
+.eds-autofill-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.775rem;
+  background: rgba(117, 216, 163, 0.08);
+  color: var(--kubi-green);
+  border: 1px solid rgba(117, 216, 163, 0.2);
+  animation: slideIn 0.25s ease;
+}
+
+.eds-autofill-notice--warn {
+  background: rgba(251, 191, 36, 0.07);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.2);
+}
